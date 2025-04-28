@@ -12,6 +12,56 @@
 
 <h1>Hotels</h1>
 
+<!-- BONUS -->
+<!-- Aggiungere un form ad inizio pagina che tramite una richiesta GET permetta di filtrare gli hotel che hanno un parcheggio. -->
+
+<!-- Form -->
+
+<!-- Passo I Filtri Tramite URL -->
+<form method="GET" class="mb-4">
+
+    <!-- Input Parcheggio -->
+    <div class="form-check form-switch mb-3">
+        <input class="form-check-input" 
+        type="checkbox" 
+        id="parkingSwitch" 
+        name="parking" 
+        value="1" 
+        
+        <?php if(isset($_GET['parking'])) echo 'checked'; ?>>  <!-- Controllo se il checkbox parking è attivo -->
+       
+    <label class="form-check-label" for="parkingSwitch">Mostra solo hotel con parcheggio</label>
+  </div>
+
+  <!-- BONUS -->
+  <!-- Aggiungere un secondo campo al form che permetta di filtrare gli hotel per voto (es. inserisco 3 ed ottengo tutti gli hotel che hanno un voto di tre stelle o superiore) -->
+
+<!-- Input Voto -->
+  <div class="mb-3">
+    <label class="form-label d-block mb-2">Filtra per voto:</label>
+
+    <!-- Ciclo Per Creare Automaticamente I Checkbox -->
+    <?php for ($i = 1; $i <= 5; $i++): ?>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" 
+        type="checkbox" 
+        id="vote<?php echo $i; ?>"
+        name="vote[]"
+        value="<?php echo $i; ?>" 
+
+        <?php if(isset($_GET['vote']) && in_array($i, $_GET['vote'])) echo 'checked'; ?>>  <!-- Controllo quali voti sono stati selezionati -->
+
+        <label class="form-check-label" for="vote<?php echo $i; ?>"><?php echo $i; ?> ★</label>
+      </div>
+
+      <!-- Sintassi Alternativa Per Chiudere Il Ciclo -->
+    <?php endfor; ?>
+  </div>
+
+  <!-- Bottone Di Submit -->
+  <button type="submit" class="btn btn-primary">Applica filtri</button>
+</form>
+
 <!-- Hotel -->
 <?php
 
@@ -57,32 +107,57 @@ $hotels = [
 
 // Stampare una tabella con tutti gli hotel e i relativi dati disponibili
 
+// Filtri
+// Funzione Per Filtrare Gli Array
+$filtered_hotels = array_filter($hotels, function($hotel) {
+    // Se l'utente seleziona "Mostra solo hotel con parcheggio" e l'hotel non ha parcheggio
+    if (isset($_GET['parking']) && !$hotel['parking']) {
+        // Scarta quell'hotel
+        return false;
+    }
+    // Se ha selezionato dei voti e l'hotel non ha uno dei voti selezionati
+    if (isset($_GET['vote']) && is_array($_GET['vote'])) {
+        if (!in_array($hotel['vote'], $_GET['vote'])) {
+            // Scarta quell'hotel
+            return false;
+        }
+    }
+    // Se l'hotel passa tutti i controlli, teniamo il nuovo array $filtered_hotels
+    return true;
+});
+
 // Tabella
-echo "<table class='table'>
-<thead>
-  <tr>
-    <th scope='col'>Name</th>
-    <th scope='col'>Description</th>
-    <th scope='col'>Parking</th>
-    <th scope='col'>Vote</th>
-    <th scope='col'>Distance To Center</th>
-  </tr>
-</thead>
-<tbody>";
+// Se ci sono hotel filtrati
+// Controlla se la variabile contiene elementi
+if (!empty($filtered_hotels)) {
+    echo "<table class='table table-bordered table-hover'>
+      <thead class='table-light'>
+        <tr>
+          <th>Nome</th>
+          <th>Descrizione</th>
+          <th>Parcheggio</th>
+          <th>Voto</th>
+          <th>Distanza dal centro</th>
+        </tr>
+      </thead>
+      <tbody>";
+    
+    //   Ciclo il nuovo array
+    foreach ($filtered_hotels as $hotel) {
+        echo "<tr>
+          <td>{$hotel['name']}</td>
+          <td>{$hotel['description']}</td>
+          <td>". ($hotel['parking'] ? '&#10003;' : 'NO') ."</td>
+          <td>{$hotel['vote']} ★</td>
+          <td>{$hotel['distance_to_center']} km</td>
+        </tr>";
+    }
 
-// Ciclo 
-foreach ($hotels as $hotel) {
-  echo "<tr>
-    <td>{$hotel['name']}</td>
-    <td>{$hotel['description']}</td>
-    <td>{$hotel['parking']}</td>
-    <td>{$hotel['vote']}</td>
-    <td>{$hotel['distance_to_center']}</td>
-  </tr>";
+    echo "</tbody></table>";
+    // Se non ci sono hotel filtrati
+} else {
+    echo "<div class='alert alert-warning'>Nessun hotel trovato con i filtri selezionati.</div>";
 }
-
-echo "</tbody>
-</table>";
 ?>
 
 </body>
